@@ -5,13 +5,122 @@ permalink: /publications/
 author_profile: true
 ---
 
+{% include base_path %}
+
 {% if site.author.googlescholar %}
   <div class="wordwrap">You can also find my articles on <a href="{{site.author.googlescholar}}">my Google Scholar profile</a>.</div>
 {% endif %}
 
-{% include base_path %}
+{% if site.author.orcid_id %}
 
-<!-- New style rendering if publication categories are defined -->
+<!--
+  Publications are pulled live from ORCID each time someone opens this page, so the
+  list updates itself as soon as a new work appears on your ORCID record. Nothing to
+  rebuild, nothing to commit, no scheduled job that can quietly stop working.
+
+  Switch it on by setting `orcid_id` under `author` in _config.yml. Clear that field
+  and this page falls straight back to the hand-written files in _publications.
+-->
+
+<div id="orcid-works">
+  <p><em>Loading publications from ORCID…</em></p>
+</div>
+
+<p style="margin-top:2em;font-size:0.8em;">
+  Source: <a href="https://orcid.org/{{ site.author.orcid_id }}">ORCID {{ site.author.orcid_id }}</a>
+</p>
+
+<script>
+(function () {
+  var orcid  = "{{ site.author.orcid_id }}";
+  var target = document.getElementById("orcid-works");
+
+  // ORCID's public API needs no key and sets permissive CORS headers, which is why
+  // this can run in the reader's browser instead of in a build step.
+  fetch("https://pub.orcid.org/v3.0/" + orcid + "/works", {
+    headers: { "Accept": "application/json" }
+  })
+    .then(function (r) {
+      if (!r.ok) { throw new Error("ORCID returned " + r.status); }
+      return r.json();
+    })
+    .then(function (data) { render(data.group || []); })
+    .catch(function (err) {
+      // Never leave a reader staring at "Loading…" forever.
+      target.innerHTML =
+        "<p>Could not load publications from ORCID (" + escapeHtml(err.message) + ").<br>" +
+        'See <a href="https://orcid.org/' + orcid + '">the ORCID record</a> directly.</p>';
+    });
+
+  function render(groups) {
+    if (!groups.length) {
+      target.innerHTML = "<p>No public works on this ORCID record yet.</p>";
+      return;
+    }
+
+    // ORCID groups duplicates of the same work, one entry per source that deposited
+    // it. The first summary in each group is the preferred version.
+    var works = groups.map(function (g) {
+      var s   = g["work-summary"][0];
+      var ids = (s["external-ids"] || {})["external-id"] || [];
+      var doi = ids.filter(function (i) { return i["external-id-type"] === "doi"; })[0];
+      return {
+        title:   (((s.title || {}).title) || {}).value || "Untitled",
+        year:    parseInt((((s["publication-date"] || {}).year) || {}).value, 10) || 0,
+        journal: ((s["journal-title"] || {}).value) || "",
+        type:    (s.type || "").toLowerCase().replace(/-/g, " "),
+        doi:     doi ? doi["external-id-value"] : null,
+        url:     ((s.url || {}).value) || null
+      };
+    });
+
+    works.sort(function (a, b) { return b.year - a.year; });
+
+    var html = "", lastYear = null;
+
+    works.forEach(function (w) {
+      var yearLabel = w.year || "Undated";
+      if (yearLabel !== lastYear) {
+        html += "<h2>" + yearLabel + "</h2><hr />";
+        lastYear = yearLabel;
+      }
+
+      var link = w.doi ? "https://doi.org/" + w.doi : w.url;
+      var titleHtml = link
+        ? '<a href="' + escapeHtml(link) + '">' + escapeHtml(w.title) + "</a>"
+        : escapeHtml(w.title);
+
+      html += '<div class="list__item"><article class="archive__item">';
+      html += '<h3 class="archive__item-title" style="margin-bottom:0.2em;">' + titleHtml + "</h3>";
+
+      var meta = [];
+      if (w.journal) { meta.push("<i>" + escapeHtml(w.journal) + "</i>"); }
+      if (w.type)    { meta.push(escapeHtml(w.type)); }
+      if (meta.length) {
+        html += '<p class="archive__item-excerpt" style="margin:0;">' + meta.join(" &middot; ") + "</p>";
+      }
+      if (w.doi) {
+        html += '<p style="margin:0;font-size:0.8em;"><a href="https://doi.org/' +
+                escapeHtml(w.doi) + '">doi:' + escapeHtml(w.doi) + "</a></p>";
+      }
+      html += "</article></div>";
+    });
+
+    target.innerHTML = html;
+  }
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+})();
+</script>
+
+{% else %}
+
+<!-- No ORCID iD set, so fall back to the files in the _publications folder. -->
+
 {% if site.publication_category %}
   {% for category in site.publication_category  %}
     {% assign title_shown = false %}
@@ -32,5 +141,4 @@ author_profile: true
   {% endfor %}
 {% endif %}
 
-
-
+{% endif %}

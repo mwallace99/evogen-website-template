@@ -39,6 +39,8 @@ author:
   inspire-hep      : # URL
   impactstory      : # URL
   orcid            : 
+  orcid_id         : # Your bare ORCID iD, e.g. "0000-0002-1825-0097". Set this and the
+                     # Publications page fills itself from your ORCID record.
   semantic         : # URL
   ssrn             : # URL
   pubmed           : 

@@ -38,6 +38,36 @@ a branch**, set the branch to **main** and the folder to **/ (root)**, and save.
 
 **4. Wait a couple of minutes**, then visit `https://YOURNAME.github.io`.
 
+## Publications that update themselves
+
+Put your ORCID iD in `_config.yml` and the Publications page fills itself in from
+your ORCID record:
+
+```yaml
+author:
+  orcid_id : "0000-0002-1825-0097"    # your own iD, digits only
+```
+
+That's the whole setup. The page fetches your works from ORCID's public API each
+time a visitor opens it, grouped by year, with DOI links. Add a paper to ORCID and it
+appears on your site immediately — there's no rebuild, no scheduled job, and nothing
+that can quietly stop working in eight months' time.
+
+Leave `orcid_id` blank and the page behaves as it always did, listing the files you
+write by hand in the `_publications` folder. Use whichever you prefer.
+
+**On Google Scholar:** you can link to your profile — set `googlescholar` in
+`_config.yml` and a link appears at the top of the Publications page — but a Scholar
+profile cannot be pulled in automatically. Google provides no API for it, scraping
+breaks their terms of service, and the scrapers that exist get blocked quickly and
+without warning. Anything promising otherwise will strand you.
+
+ORCID is the way round this, and it's a one-off job: ORCID's *Search & Link* wizards
+import from Crossref, Scopus and PubMed in a few clicks, and Scholar itself can
+export BibTeX you can feed in. Do that once, keep ORCID current afterwards, and this
+page stays current for free. It's also the identifier journals and funders are
+increasingly asking for anyway.
+
 ## Adding your own content
 
 Pages live in `_pages` and are written in Markdown. The sections in the top menu each
